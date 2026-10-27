@@ -4,7 +4,7 @@
   try { preference = localStorage.getItem('blog-theme'); } catch {}
   if (preference) document.documentElement.dataset.theme = preference;
   button?.addEventListener('click', () => {
-    const dark = document.documentElement.dataset.theme === 'dark' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+    const dark = document.documentElement.dataset.theme === 'dark';
     const next = dark ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
     try { localStorage.setItem('blog-theme', next); } catch {}
