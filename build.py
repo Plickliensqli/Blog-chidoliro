@@ -8,6 +8,9 @@ import os
 import re
 import shutil
 import xml.etree.ElementTree as ET
+import base64
+import binascii
+import hashlib
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'dist'
@@ -29,6 +32,32 @@ def media_path(value):
     if not (ROOT / value).is_file():
         raise ValueError('No se encuentra el archivo: ' + value)
     return href(value)
+
+def embedded_image(value):
+    if not value:
+        return None
+    if not isinstance(value, str) or len(value) > 17 * 1024 * 1024:
+        raise ValueError('La imagen incluida supera el tamaño permitido (12 MB).')
+    match = re.fullmatch(r'data:image/(png|jpeg|webp|gif);base64,([A-Za-z0-9+/=\r\n]+)', value)
+    if not match:
+        raise ValueError('La imagen incluida no tiene un formato válido.')
+    try:
+        data = base64.b64decode(match[2].replace('\r', '').replace('\n', ''), validate=True)
+    except binascii.Error as error:
+        raise ValueError('La imagen incluida está incompleta o dañada.') from error
+    if not data or len(data) > 12 * 1024 * 1024:
+        raise ValueError('La imagen debe ocupar entre 1 byte y 12 MB.')
+    valid = {
+        'png': data.startswith(b'\x89PNG\r\n\x1a\n'),
+        'jpeg': data.startswith(b'\xff\xd8\xff'),
+        'gif': data.startswith((b'GIF87a', b'GIF89a')),
+        'webp': data.startswith(b'RIFF') and data[8:12] == b'WEBP',
+    }
+    if not valid[match[1]]:
+        raise ValueError('El contenido de la imagen no coincide con su formato.')
+    extension = 'jpg' if match[1] == 'jpeg' else match[1]
+    path = 'media/' + hashlib.sha256(data).hexdigest()[:24] + '.' + extension
+    return path, data
 
 def pretty_day(value):
     d = date.fromisoformat(value)
@@ -53,7 +82,8 @@ def load_posts():
         if p['category'] not in SECTIONS:
             raise ValueError(f'{path.name}: categoría no válida')
         date.fromisoformat(p['date'])
-        p['image_url'] = media_path(p.get('image', ''))
+        p['embedded_image'] = embedded_image(p.get('image_data', ''))
+        p['image_url'] = href(p['embedded_image'][0]) if p['embedded_image'] else media_path(p.get('image', ''))
         p['audio_url'] = media_path(p.get('audio', ''))
         if p['image_url'] and not p.get('image_alt', '').strip():
             raise ValueError(f'{path.name}: añade una descripción de la imagen')
@@ -79,7 +109,7 @@ def page(title, body, active='', description=None, canonical=''):
 <header class="header"><a class="brand" href="{href()}"><span class="brand-mark" aria-hidden="true">b.</span><span>{esc(SITE['title'])}<small>un cuaderno personal</small></span></a>
 <nav aria-label="Principal">{nav}</nav><button class="theme-button" id="theme" type="button" aria-label="Cambiar entre tema claro y oscuro">◐</button></header>
 <main id="contenido">{body}</main>
-<footer class="footer"><div><strong>{esc(SITE['title'])}</strong><span>Dibujos, palabras y alguna canción.</span></div><div><a href="{href('sobre-mi/')}">Sobre este espacio</a><a href="{href('feed.xml')}">RSS</a><a href="{href('editor/')}">Editor</a></div><small>© {esc(SITE['author'])} · Las obras pertenecen a su autor.</small></footer></body></html>'''
+<footer class="footer"><div><strong>{esc(SITE['title'])}</strong><span>Dibujos, palabras y alguna canción.</span></div><div><a href="{href('sobre-mi/')}">Sobre este espacio</a><a href="{href('feed.xml')}">RSS</a></div><small>© {esc(SITE['author'])} · Las obras pertenecen a su autor.</small></footer></body></html>'''
 
 def save(path, text):
     dest = OUT / path
@@ -112,6 +142,12 @@ def build():
         shutil.rmtree(OUT)
     OUT.mkdir()
     shutil.copytree(ROOT / 'assets', OUT / 'assets')
+    for p in posts:
+        if p['embedded_image']:
+            path, data = p['embedded_image']
+            dest = OUT / path
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(data)
     hero = '''<section class="hero"><div class="eyebrow"><span></span> ARCHIVO PERSONAL / EN CONSTRUCCIÓN</div><h1>Cosas que dibujo.<br>Ideas que <em>se quedan.</em></h1><div class="hero-bottom"><p>Un lugar para los trazos, los pensamientos<br class="desktop-break"> y la música que aparece entre ellos.</p><a href="#publicaciones">Explorar el cuaderno <span aria-hidden="true">↓</span></a></div><span class="hero-star" aria-hidden="true">✳</span></section><section class="latest" id="publicaciones"><div class="section-heading"><h2>Entre páginas</h2><span>El archivo, sin prisa.</span></div>'''
     save('index.html', page('Inicio', hero + listing(posts) + '</section>'))
     intros = {'dibujos': 'Bocetos, trazos y dibujos terminados. Un espacio para mirar con calma.', 'escritos': 'Pensamientos, relatos e ideas que encontraron palabras.', 'musica': 'Melodías y composiciones para escuchar un momento.'}
@@ -122,8 +158,6 @@ def build():
         path = 'publicaciones/' + p['slug'] + '/'
         save(path + 'index.html', page(p['title'], article(p), p['category'] + '/', p['excerpt'], path))
     save('sobre-mi/index.html', page('Sobre este espacio', '<section class="post"><div class="eyebrow">UN PEQUEÑO RINCÓN EN INTERNET</div><h1>Sobre este espacio<span class="dot">.</span></h1><div class="prose"><p>Un cuaderno personal para reunir dibujos, pensamientos y música. Aquí hay lugar tanto para una obra terminada como para una idea que apenas empieza.</p><p>Este sitio está hecho con archivos propios. Sus páginas y sus obras pueden conservarse y trasladarse a otro alojamiento.</p></div></section>', canonical='sobre-mi/'))
-    editor = (ROOT / 'editor-body.html').read_text(encoding='utf-8').replace('%%BASE%%', BASE)
-    save('editor/index.html', page('Editor de publicaciones', editor, canonical='editor/').replace('</head>', f'<meta name="robots" content="noindex"><script src="{href("assets/editor.js")}" defer></script></head>'))
     save('404.html', page('Página no encontrada', f'<section class="post"><div class="eyebrow">404</div><h1>Esta página se perdió.</h1><p>Puede que el enlace haya cambiado.</p><a class="button" href="{href()}">Volver al cuaderno</a></section>'))
     save('.nojekyll', '')
     rss = ET.Element('rss', version='2.0')

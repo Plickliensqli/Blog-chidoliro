@@ -4,6 +4,8 @@ from urllib.parse import urlsplit
 import threading
 import webbrowser
 import build
+import shutil
+import sys
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -22,11 +24,21 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == '__main__':
     build.build()
+    local = build.ROOT / '_local'
+    if (local / 'editor-body.html').is_file() and (local / 'editor.js').is_file():
+        body = (local / 'editor-body.html').read_text(encoding='utf-8')
+        html = build.page('Editor local', body, canonical='editor/').replace('</head>', f'<script src="{build.href("editor/editor.js")}" defer></script></head>')
+        build.save('editor/index.html', html)
+        shutil.copyfile(local / 'editor.js', build.OUT / 'editor/editor.js')
+        home = build.OUT / 'index.html'
+        html = home.read_text(encoding='utf-8').replace('>RSS</a>', f'>RSS</a><a href="{build.href("editor/")}">Editor local</a>')
+        home.write_text(html, encoding='utf-8')
     server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
     url = f'http://127.0.0.1:{server.server_port}{build.BASE}/'
     print('Vista previa local: ' + url, flush=True)
     print('Esta vista no publica en Internet. Cierra esta ventana para terminar.', flush=True)
-    threading.Timer(0.7, webbrowser.open, args=(url,)).start()
+    if '--no-browser' not in sys.argv:
+        threading.Timer(0.7, webbrowser.open, args=(url,)).start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:
