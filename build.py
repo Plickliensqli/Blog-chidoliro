@@ -228,7 +228,7 @@ def build():
                 dest = OUT / path
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(data)
-    hero = f'''<section class="hero"><div class="hero-copy"><div class="eyebrow">DIBUJOS / PALABRAS / MÚSICA</div><h1>Un pequeño<br>archivo <em>personal.</em></h1><p>Bocetos, ideas sueltas y cosas que voy creando.</p><a class="hero-link" href="{href('dibujos/')}">Explorar los dibujos <span aria-hidden="true">↗</span></a></div><div class="hero-sign" aria-hidden="true">{drill('hero-drill')}<span>TRAZOS<br>PROPIOS.</span></div></section><section class="latest" id="publicaciones"><div class="section-heading"><h2>Lo más reciente</h2><span>EL CUADERNO, SIN PRISA.</span></div>'''
+    hero = f'''<section class="hero"><div class="hero-copy"><div class="eyebrow">DIBUJOS / PALABRAS / MÚSICA</div><h1>Un pequeño<br>archivo <em>personal.</em></h1><p>Bocetos, ideas sueltas y cosas que voy creando.</p><a class="hero-link" href="{href('dibujos/')}">Explorar los dibujos <span aria-hidden="true">↗</span></a></div><div class="hero-sign" aria-hidden="true">{drill('hero-drill')}</div></section><section class="latest" id="publicaciones"><div class="section-heading"><h2>Lo más reciente</h2><span>EL CUADERNO, SIN PRISA.</span></div>'''
     save('index.html', page('Inicio', hero + listing(posts) + '</section>'))
     count = max(1, math.ceil(len(drawings)/GALLERY_PAGE_SIZE))
     gallery_paths = []
