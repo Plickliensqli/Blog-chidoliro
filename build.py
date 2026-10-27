@@ -138,7 +138,7 @@ def page(title, body, active='', description=None, canonical=''):
 <meta property="og:title" content="{esc(title, quote=True)}"><meta property="og:description" content="{esc(desc, quote=True)}"><meta property="og:type" content="website">
 <link rel="icon" href="{href('assets/favicon.ico')}?v=2" sizes="16x16 32x32 48x48 64x64"><link rel="icon" type="image/png" sizes="192x192" href="{href('assets/blog-icon.png')}?v=2"><link rel="apple-touch-icon" href="{href('assets/blog-icon.png')}">
 <link rel="alternate" type="application/rss+xml" title="{esc(SITE['title'], quote=True)}" href="{href('feed.xml')}">
-<link rel="stylesheet" href="{href('assets/style.css')}?v=3"><script src="{href('assets/site.js')}?v=3" defer></script></head>
+<link rel="stylesheet" href="{href('assets/style.css')}?v=4"><script src="{href('assets/site.js')}?v=3" defer></script></head>
 <body><a class="skip" href="#contenido">Saltar al contenido</a><div class="topline" aria-hidden="true"></div>
 <header class="header"><a class="brand" href="{href()}"><span class="brand-mark"><img src="{href('assets/blog-icon.jpg')}" width="50" height="50" alt=""></span><span>{esc(SITE['title'])}<small>CUADERNO PERSONAL</small></span></a><nav aria-label="Principal">{nav}</nav><button class="theme-button" id="theme" type="button" aria-label="Cambiar entre tema claro y oscuro">◐</button></header>
 <main id="contenido">{body}</main><footer class="footer"><div class="footer-brand">{drill('footer-drill')}<div><strong>{esc(SITE['title'])}</strong><span>Dibujos, palabras y alguna canción.</span></div></div><div class="footer-links"><a href="{href('sobre-mi/')}">Sobre este espacio</a><a href="{href('feed.xml')}">RSS</a></div><small>© {esc(SITE['author'])} · Las obras pertenecen a su autor.</small></footer></body></html>'''
@@ -161,22 +161,22 @@ def listing(posts, category=None):
     empty = '<div class="empty">' + drill() + '<h3>Una página por estrenar.</h3><p>Las publicaciones de esta sección aparecerán aquí.</p></div>'
     return controls + '<div class="entries">' + (''.join(card(p) for p in selected) if selected else empty) + '</div><p id="no-results" class="empty" hidden role="status">No hay publicaciones con esa búsqueda.</p>'
 
-def gallery_url(number):
-    return href('dibujos/' if number == 1 else f'dibujos/pagina/{number}/')
+def gallery_url(number, category='dibujos'):
+    return href(f'{category}/' if number == 1 else f'{category}/pagina/{number}/')
 
-def pagination(number, count):
+def pagination(number, count, category='dibujos'):
     if count <= 1:
         return ''
-    pieces = [f'<a class="page-direction" href="{gallery_url(number-1)}" rel="prev">← Anterior</a>' if number > 1 else '<span class="page-direction disabled">← Anterior</span>']
+    pieces = [f'<a class="page-direction" href="{gallery_url(number-1, category)}" rel="prev">← Anterior</a>' if number > 1 else '<span class="page-direction disabled">← Anterior</span>']
     wanted = sorted({1, count} | set(range(max(1, number-2), min(count, number+2)+1)))
     last = 0
     for n in wanted:
         if last and n > last+1:
             pieces.append('<span class="ellipsis" aria-hidden="true">…</span>')
-        pieces.append(f'<span class="page-number current" aria-current="page" aria-label="Página {n}">{n}</span>' if n == number else f'<a class="page-number" href="{gallery_url(n)}" aria-label="Página {n}">{n}</a>')
+        pieces.append(f'<span class="page-number current" aria-current="page" aria-label="Página {n}">{n}</span>' if n == number else f'<a class="page-number" href="{gallery_url(n, category)}" aria-label="Página {n}">{n}</a>')
         last = n
-    pieces.append(f'<a class="page-direction" href="{gallery_url(number+1)}" rel="next">Siguiente →</a>' if number < count else '<span class="page-direction disabled">Siguiente →</span>')
-    return '<nav class="pagination" aria-label="Páginas de dibujos">' + ''.join(pieces) + '</nav>'
+    pieces.append(f'<a class="page-direction" href="{gallery_url(number+1, category)}" rel="next">Siguiente →</a>' if number < count else '<span class="page-direction disabled">Siguiente →</span>')
+    return f'<nav class="pagination" aria-label="Páginas de {SECTIONS[category].lower()}">' + ''.join(pieces) + '</nav>'
 
 def gallery_item(p, number):
     pictures = ''.join(f'<a class="gallery-image" href="{p["link"]}" aria-label="Abrir {esc(p["title"], quote=True)}, imagen {i}"><img src="{esc(im["url"], quote=True)}" alt="{esc(im["alt"], quote=True)}" loading="lazy" decoding="async"></a>' for i, im in enumerate(p['images'], 1))
@@ -195,6 +195,21 @@ def gallery(posts, number, count):
         content = '<div class="empty">' + drill() + '<h3>Los primeros trazos van aquí.</h3></div>'
     return intro + '<div class="gallery-feed">' + stats + content + pagination(number, count) + '</div>'
 
+def writing_item(p, number):
+    paragraphs = ''.join('<p>' + esc(x).replace('\n', '<br>') + '</p>' for x in p['text'].strip().split('\n\n') if x.strip())
+    pictures = ''.join(f'<figure><a class="gallery-image" href="{p["link"]}"><img src="{esc(im["url"], quote=True)}" alt="{esc(im["alt"], quote=True)}" loading="lazy"></a>' + (f'<figcaption>{esc(im["caption"])}</figcaption>' if im['caption'] else '') + '</figure>' for im in p['images'])
+    return f'<article class="gallery-entry writing-entry"><div class="gallery-heading"><span class="work-number">{number:03d}</span><div>{meta(p)}<h2><a href="{p["link"]}">{esc(p["title"])}</a></h2></div></div><div class="post-images">{pictures}</div><div class="prose">{paragraphs}</div><a class="read" href="{p["link"]}">Abrir publicación ↗</a></article>'
+
+def writings(posts, number, count):
+    start = (number-1)*GALLERY_PAGE_SIZE
+    selected = posts[start:start+GALLERY_PAGE_SIZE]
+    intro = f'<section class="section-intro gallery-intro"><div><div class="eyebrow">02 / PALABRAS</div><h1>Escritos<span class="dot">.</span></h1><p>Pensamientos, relatos e ideas. Baja para seguir leyendo.</p></div>{drill("section-drill")}</section>'
+    stats = f'<div class="gallery-stats"><span>{len(posts):02d} publicaciones</span><span>Página {number} / {count}</span></div>'
+    content = ''.join(writing_item(p, len(posts)-start-i) for i, p in enumerate(selected))
+    if not content:
+        content = '<div class="empty">' + drill() + '<h3>Las primeras palabras van aquí.</h3></div>'
+    return intro + '<div class="gallery-feed writing-feed">' + stats + content + pagination(number, count, 'escritos') + '</div>'
+
 def adjacent(p, drawings):
     index = next(i for i, item in enumerate(drawings) if item['slug'] == p['slug'])
     older = drawings[index+1] if index+1 < len(drawings) else None
@@ -203,13 +218,13 @@ def adjacent(p, drawings):
         if item:
             return f'<a class="post-adjacent {rel}" href="{item["link"]}" rel="{rel}"><small>{label}</small><span>{esc(item["title"])}</span></a>'
         return f'<span class="post-adjacent disabled"><small>{label}</small><span>No hay más publicaciones</span></span>'
-    return '<nav class="post-navigation" aria-label="Navegar entre dibujos">' + link(older, '← Anterior', 'prev') + link(newer, 'Siguiente →', 'next') + '</nav>'
+    return f'<nav class="post-navigation" aria-label="Navegar entre {SECTIONS[p["category"]].lower()}">' + link(older, '← Anterior', 'prev') + link(newer, 'Siguiente →', 'next') + '</nav>'
 
-def article(p, drawings):
+def article(p, posts):
     paragraphs = ''.join('<p>' + esc(x).replace('\n', '<br>') + '</p>' for x in p['text'].strip().split('\n\n') if x.strip())
     pictures = ''.join(f'<figure><img src="{esc(im["url"], quote=True)}" alt="{esc(im["alt"], quote=True)}"' + (' loading="lazy"' if i else '') + '>' + (f'<figcaption>{esc(im["caption"])}</figcaption>' if im['caption'] else '') + '</figure>' for i, im in enumerate(p['images']))
     audio = f'<div class="audio"><p>Escucha esta composición</p><audio controls preload="metadata" src="{esc(p["audio_url"], quote=True)}">Tu navegador no admite audio.</audio><a href="{esc(p["audio_url"], quote=True)}" download>Descargar audio</a></div>' if p['audio_url'] else ''
-    navigation = adjacent(p, drawings) if p['category'] == 'dibujos' else '<div class="post-end">' + drill() + '</div>'
+    navigation = adjacent(p, [item for item in posts if item['category'] == p['category']]) if p['category'] in ('dibujos', 'escritos') else '<div class="post-end">' + drill() + '</div>'
     return f'<article class="post{ " artwork-post" if p["category"] == "dibujos" else ""}"><a class="back" href="{href(p["category"] + "/")}">← Volver a {SECTIONS[p["category"]].lower()}</a>{meta(p)}<h1>{esc(p["title"])}</h1><p class="post-lead">{esc(p["excerpt"])}</p><div class="post-images">{pictures}</div><div class="prose">{paragraphs}</div>{audio}{navigation}</article>'
 
 def build():
@@ -236,13 +251,19 @@ def build():
         path = 'dibujos/' if number == 1 else f'dibujos/pagina/{number}/'
         gallery_paths.append(path)
         save(path + 'index.html', page('Dibujos' + (f' · Página {number}' if number > 1 else ''), gallery(drawings, number, count), 'dibujos/', canonical=path))
-    intros = {'escritos': ('02 / PALABRAS', 'Pensamientos, relatos e ideas que encontraron palabras.'), 'musica': ('03 / SONIDOS', 'Melodías y composiciones para escuchar un momento.')}
+    written = [p for p in posts if p['category'] == 'escritos']
+    writing_count = max(1, math.ceil(len(written)/GALLERY_PAGE_SIZE))
+    for number in range(1, writing_count+1):
+        path = 'escritos/' if number == 1 else f'escritos/pagina/{number}/'
+        gallery_paths.append(path)
+        save(path + 'index.html', page('Escritos' + (f' · Página {number}' if number > 1 else ''), writings(written, number, writing_count), 'escritos/', canonical=path))
+    intros = {'musica': ('03 / SONIDOS', 'Melodías y composiciones para escuchar un momento.')}
     for key, (label, text) in intros.items():
         body = f'<section class="section-intro"><div class="eyebrow">{label}</div><h1>{SECTIONS[key]}<span class="dot">.</span></h1><p>{text}</p></section>' + listing(posts, key)
         save(key + '/index.html', page(SECTIONS[key], body, key + '/', canonical=key + '/'))
     for p in posts:
         path = 'publicaciones/' + p['slug'] + '/'
-        save(path + 'index.html', page(p['title'], article(p, drawings), p['category'] + '/', p['excerpt'], path))
+        save(path + 'index.html', page(p['title'], article(p, posts), p['category'] + '/', p['excerpt'], path))
     save('sobre-mi/index.html', page('Sobre este espacio', '<section class="post"><div class="eyebrow">UN CUADERNO PERSONAL</div><h1>Sobre este espacio<span class="dot">.</span></h1><div class="prose"><p>Un blog personal para reunir mis bocetos, dibujos, pensamientos, música y cosas en general.</p><p>Aquí hay lugar tanto para una obra terminada como para una idea que apenas empieza.</p></div></section>', canonical='sobre-mi/'))
     save('404.html', page('Página no encontrada', f'<section class="post"><div class="eyebrow">404 / FUERA DEL ARCHIVO</div><h1>Esta página se perdió.</h1><a class="button" href="{href()}">Volver al inicio</a></section>'))
     save('.nojekyll', '')
@@ -256,7 +277,7 @@ def build():
             ET.SubElement(item, tag).text = value
     save('feed.xml', '<?xml version="1.0" encoding="utf-8"?>\n' + ET.tostring(rss, encoding='unicode'))
     sitemap = ET.Element('urlset', xmlns='http://www.sitemaps.org/schemas/sitemap/0.9')
-    for path in ['', 'escritos/', 'musica/', 'sobre-mi/'] + gallery_paths + ['publicaciones/' + p['slug'] + '/' for p in posts]:
+    for path in ['', 'musica/', 'sobre-mi/'] + gallery_paths + ['publicaciones/' + p['slug'] + '/' for p in posts]:
         ET.SubElement(ET.SubElement(sitemap, 'url'), 'loc').text = SITE['url'] + href(path)
     save('sitemap.xml', '<?xml version="1.0" encoding="utf-8"?>\n' + ET.tostring(sitemap, encoding='unicode'))
     save('robots.txt', f'User-agent: *\nAllow: /\nDisallow: {href("editor/")}\nSitemap: {SITE["url"]}{href("sitemap.xml")}\n')
