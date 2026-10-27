@@ -102,11 +102,13 @@ def page(title, body, active='', description=None, canonical=''):
 <title>{esc(title)} · {esc(SITE['title'])}</title><meta name="description" content="{esc(desc, quote=True)}">
 <meta name="color-scheme" content="light dark">{canonical_tag}
 <meta property="og:title" content="{esc(title, quote=True)}"><meta property="og:description" content="{esc(desc, quote=True)}"><meta property="og:type" content="website">
-<link rel="icon" type="image/svg+xml" href="{href('assets/favicon.svg')}">
+<link rel="icon" href="{href('assets/favicon.ico')}?v=2" sizes="16x16 32x32 48x48 64x64">
+<link rel="icon" type="image/png" sizes="192x192" href="{href('assets/blog-icon.png')}?v=2">
+<link rel="apple-touch-icon" href="{href('assets/blog-icon.png')}">
 <link rel="alternate" type="application/rss+xml" title="{esc(SITE['title'], quote=True)}" href="{href('feed.xml')}">
 <link rel="stylesheet" href="{href('assets/style.css')}"><script src="{href('assets/site.js')}" defer></script></head>
 <body><a class="skip" href="#contenido">Saltar al contenido</a>
-<header class="header"><a class="brand" href="{href()}"><span class="brand-mark" aria-hidden="true">b.</span><span>{esc(SITE['title'])}<small>un cuaderno personal</small></span></a>
+<header class="header"><a class="brand" href="{href()}"><span class="brand-mark" aria-hidden="true"><img src="{href('assets/blog-icon.jpg')}" width="52" height="52" alt=""></span><span>{esc(SITE['title'])}<small>un cuaderno personal</small></span></a>
 <nav aria-label="Principal">{nav}</nav><button class="theme-button" id="theme" type="button" aria-label="Cambiar entre tema claro y oscuro">◐</button></header>
 <main id="contenido">{body}</main>
 <footer class="footer"><div><strong>{esc(SITE['title'])}</strong><span>Dibujos, palabras y alguna canción.</span></div><div><a href="{href('sobre-mi/')}">Sobre este espacio</a><a href="{href('feed.xml')}">RSS</a></div><small>© {esc(SITE['author'])} · Las obras pertenecen a su autor.</small></footer></body></html>'''
