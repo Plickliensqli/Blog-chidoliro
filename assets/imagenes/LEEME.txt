@@ -1,0 +1,3 @@
+Coloca aquí versiones para la web de tus dibujos (JPG, PNG o WebP).
+En el editor usa una ruta como: assets/imagenes/mi-dibujo.webp
+Conserva los originales de alta resolución en otra carpeta.
