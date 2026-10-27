@@ -138,7 +138,7 @@ def page(title, body, active='', description=None, canonical=''):
 <meta property="og:title" content="{esc(title, quote=True)}"><meta property="og:description" content="{esc(desc, quote=True)}"><meta property="og:type" content="website">
 <link rel="icon" href="{href('assets/favicon.ico')}?v=2" sizes="16x16 32x32 48x48 64x64"><link rel="icon" type="image/png" sizes="192x192" href="{href('assets/blog-icon.png')}?v=2"><link rel="apple-touch-icon" href="{href('assets/blog-icon.png')}">
 <link rel="alternate" type="application/rss+xml" title="{esc(SITE['title'], quote=True)}" href="{href('feed.xml')}">
-<link rel="stylesheet" href="{href('assets/style.css')}?v=4"><script src="{href('assets/site.js')}?v=3" defer></script></head>
+<link rel="stylesheet" href="{href('assets/style.css')}?v=5"><script src="{href('assets/site.js')}?v=3" defer></script></head>
 <body><a class="skip" href="#contenido">Saltar al contenido</a><div class="topline" aria-hidden="true"></div>
 <header class="header"><a class="brand" href="{href()}"><span class="brand-mark"><img src="{href('assets/blog-icon.jpg')}" width="50" height="50" alt=""></span><span>{esc(SITE['title'])}<small>CUADERNO PERSONAL</small></span></a><nav aria-label="Principal">{nav}</nav><button class="theme-button" id="theme" type="button" aria-label="Cambiar entre tema claro y oscuro">◐</button></header>
 <main id="contenido">{body}</main><footer class="footer"><div class="footer-brand">{drill('footer-drill')}<div><strong>{esc(SITE['title'])}</strong><span>Dibujos, palabras y alguna canción.</span></div></div><div class="footer-links"><a href="{href('sobre-mi/')}">Sobre este espacio</a><a href="{href('feed.xml')}">RSS</a></div><small>© {esc(SITE['author'])} · Las obras pertenecen a su autor.</small></footer></body></html>'''
@@ -152,7 +152,7 @@ def meta(p):
     return f'<div class="meta"><span class="category">{SECTIONS[p["category"]]}</span><time datetime="{p["date"]}">{pretty_day(p["date"])}</time></div>'
 
 def card(p):
-    image = f'<a class="card-image" href="{p["link"]}"><img src="{esc(p["image_url"], quote=True)}" alt="{esc(p["image_alt"], quote=True)}" loading="lazy"></a>' if p['image_url'] else ''
+    image = f'<a class="card-image" href="{p["link"]}"><img src="{esc(p["image_url"], quote=True)}" alt="{esc(p["image_alt"], quote=True)}" loading="lazy"></a>' if p['image_url'] and p['category'] != 'escritos' else ''
     return f'<article class="entry" data-category="{p["category"]}" data-search="{esc(p["title"] + " " + p["excerpt"], quote=True)}">{image}<div class="entry-info">{meta(p)}<h3><a href="{p["link"]}">{esc(p["title"])}</a></h3><p>{esc(p["excerpt"])}</p><a class="read" href="{p["link"]}">Abrir publicación <span aria-hidden="true">↗</span></a></div></article>'
 
 def listing(posts, category=None):
@@ -197,8 +197,7 @@ def gallery(posts, number, count):
 
 def writing_item(p, number):
     paragraphs = ''.join('<p>' + esc(x).replace('\n', '<br>') + '</p>' for x in p['text'].strip().split('\n\n') if x.strip())
-    pictures = ''.join(f'<figure><a class="gallery-image" href="{p["link"]}"><img src="{esc(im["url"], quote=True)}" alt="{esc(im["alt"], quote=True)}" loading="lazy"></a>' + (f'<figcaption>{esc(im["caption"])}</figcaption>' if im['caption'] else '') + '</figure>' for im in p['images'])
-    return f'<article class="gallery-entry writing-entry"><div class="gallery-heading"><span class="work-number">{number:03d}</span><div>{meta(p)}<h2><a href="{p["link"]}">{esc(p["title"])}</a></h2></div></div><div class="post-images">{pictures}</div><div class="prose">{paragraphs}</div><a class="read" href="{p["link"]}">Abrir publicación ↗</a></article>'
+    return f'<article class="gallery-entry writing-entry"><div class="gallery-heading"><span class="work-number">{number:03d}</span><div>{meta(p)}<h2><a href="{p["link"]}">{esc(p["title"])}</a></h2></div></div><div class="prose">{paragraphs}</div><a class="read" href="{p["link"]}">Abrir publicación ↗</a></article>'
 
 def writings(posts, number, count):
     start = (number-1)*GALLERY_PAGE_SIZE
