@@ -46,9 +46,13 @@ La entrada `content/bienvenida.json` es un ejemplo; puedes reemplazarla con tu p
 
 ## Copia local en tu computadora
 
-Esta carpeta contiene una copia de los archivos editables y `dist/` con el sitio generado. No se sincroniza automáticamente con GitHub.
+Esta carpeta contiene el repositorio Git local vinculado a `Plickliensqli/Blog-chidoliro`, los archivos editables y `dist/` con el sitio generado. Los cambios locales solo llegan a GitHub cuando haces **Commit** y **Push**.
 
-Si prefieres usar GitHub Desktop, clona `Plickliensqli/Blog-chidoliro` en una carpeta nueva y vacía desde **File → Clone repository → URL**. Esa copia sí tendrá el historial y permitirá enviar cambios con **Commit to main → Push origin**. No selecciones la carpeta de copia existente como destino del clon.
+Para ver el blog en tu computadora, haz doble clic en **Abrir-blog.cmd**. Se abrirá una vista previa en tu navegador; deja abierta su ventana mientras la uses. Esto no publica nada en Internet. Python ya está instalado en esta computadora.
+
+Para usar la copia existente con GitHub Desktop, elige **File → Add local repository**, selecciona esta carpeta `blog-personal` y pulsa **Add repository**. Usa **Fetch origin → Pull origin** antes de editar si hiciste cambios desde la web. Para enviar cambios locales: **Commit to main → Push origin**.
+
+En otra computadora puedes clonar el repositorio desde **File → Clone repository → URL** en una carpeta nueva y vacía. No necesitas Python para publicar a través de GitHub; solo para generar o previsualizar localmente.
 
 ## Mantenimiento técnico opcional
 
